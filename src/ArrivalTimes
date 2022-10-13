@@ -1,0 +1,43 @@
+import java.io.FileNotFoundException;
+import java.io.File;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.Scanner;
+import java.util.Date;
+import java.util.ArrayList;
+import java.util.Comparator;
+
+public class ArrivalTimes {
+    public static ArrayList <String> searchTrips(String time, String filename){
+        SimpleDateFormat dateFormat = new SimpleDateFormat("HH:mm:ss");
+        try {
+            Date maximumTime = dateFormat.parse("24:00:00");
+            Date givenArrivalTime = dateFormat.parse(time);
+            ArrayList<String> allTrips = new ArrayList<String>();
+            String line, s;
+            File file = new File(filename);
+            Scanner sc = new Scanner(file);
+            sc.nextLine();//discard line
+            Scanner scLine = null;
+            while (sc.hasNextLine()) { //reading stop_times.txt
+                line = sc.nextLine();
+                scLine = new Scanner(line);
+                scLine.useDelimiter(","); //seperate info according to commas
+                scLine.next(); //skip trip id
+                s = scLine.next(); //store arrival time
+                Date currentArrivalTime = dateFormat.parse(s); //parse this arrival time to date format
+                if (currentArrivalTime.getTime() < maximumTime.getTime() && givenArrivalTime.getTime() == currentArrivalTime.getTime()) {
+                    allTrips.add(line);
+                }
+            }
+            allTrips.sort(Comparator.naturalOrder()); //orders based on tripID
+            return allTrips;
+        } catch (ParseException e) {
+            System.out.println("Parsing error!");
+        }
+        catch (Exception e) {
+            System.out.println("Exception occured!");
+        }
+        return null;
+    }
+}

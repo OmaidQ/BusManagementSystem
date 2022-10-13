@@ -1,0 +1,122 @@
+import java.io.FileNotFoundException;
+import java.io.File;
+import java.util.Scanner;
+
+public class ShortestPath {
+    public static double adjacencyMatrix[][];
+    private static final int child = -1;
+    public static final int stops = 12479; //total amount of stops
+
+    ShortestPath(String file1, String file2) throws FileNotFoundException {
+        shortestPathCalculator(file1, file2);
+    }
+
+    public void shortestPathCalculator(String file0, String file1) throws FileNotFoundException {
+        adjacencyMatrix = new double[stops][stops];
+        for(int i = 0; i < adjacencyMatrix.length; i++){
+            for(int j = 0; j < adjacencyMatrix[i].length; j++){
+                if(i != j) {
+                    adjacencyMatrix[i][j] = Double.MAX_VALUE; //Set all entries except diagnols to MAX value
+                }
+                else {
+                    adjacencyMatrix[i][j] = 0;
+                }
+            }
+        }
+        File file = new File(file0);
+        Scanner sc = new Scanner(file);
+        sc.nextLine(); //discard line
+        Scanner scLine = null; // create new scanner
+
+        int stopA = 0,stopB = 0;
+        int currentID = 0, prevID = 0;
+        double distance = 1;
+        String line;
+
+        while(sc.hasNextLine()) { //reading stop_times.txt
+            line = sc.nextLine();
+            scLine = new Scanner(line);
+            scLine.useDelimiter(","); //seperate info according to commas
+            prevID = currentID; //store previous ID
+            currentID = scLine.nextInt();
+
+            scLine.next(); //skip next two pieces of information
+            scLine.next();
+
+            stopA = stopB;
+            stopB = scLine.nextInt();
+            if(prevID == currentID) adjacencyMatrix[stopA][stopB] = distance; //if both trip ID's are the same, allocate a distance of 1 in the matrix
+            scLine.close(); //no more info required
+        }
+        sc.close();
+
+        File file2 = new File(file1);
+        sc = new Scanner(file2);
+        sc.nextLine(); //discard line
+        double min_transfer_time, transfer_type;
+        while(sc.hasNextLine()){
+            line = sc.nextLine();
+            scLine = new Scanner(line);
+            scLine.useDelimiter(",");
+            stopA = scLine.nextInt();  //store the two stops
+            stopB = scLine.nextInt();
+
+            transfer_type = scLine.nextDouble();
+            if(transfer_type == 0) adjacencyMatrix[stopA][stopB] = 2;
+            else if(transfer_type == 2){
+                min_transfer_time = scLine.nextDouble();
+                adjacencyMatrix[stopA][stopB] = min_transfer_time/100;
+            }
+            scLine.close();
+        }
+        sc.close();
+    }
+
+    public static void findShortestPath(int stopA, int stopB) {
+        int totalVertices = adjacencyMatrix[0].length;
+        double[] dist = new double[totalVertices]; //holds all shortest distances
+        boolean[] shortestPathSet = new boolean[totalVertices]; //holds whether vertex is in shortest path
+        for (int i = 0; i < totalVertices; i++) {
+            dist[i] = Double.MAX_VALUE;
+            shortestPathSet[i] = false;
+        }
+        dist[stopA] = 0;
+        int[] parents = new int[totalVertices]; //will store our shortest path tree
+        parents[stopA] = child; //stopA has no parents
+        for (int i = 1; i < totalVertices; i++) { //minimum distance vertex is processed
+            int nearestVertex = 0;
+            double shortestDistance = Double.MAX_VALUE;
+            for (int j = 0; j < totalVertices; j++) {
+                if (!shortestPathSet[j] && dist[j] < shortestDistance) {
+                    nearestVertex = j;
+                    shortestDistance = dist[j];
+                }
+            }
+            shortestPathSet[nearestVertex] = true; // vertex has been processed
+            for (int j = 0; j < totalVertices; j++) { //distance of adjacent vertices are updated
+                double cost = adjacencyMatrix[nearestVertex][j];
+                if ((cost > 0) && (dist[j] > (shortestDistance + cost))) {
+                    dist[j] = shortestDistance + cost;
+                    parents[j] = nearestVertex;
+                }
+            }
+        }
+        if (dist[stopB] == Double.MAX_VALUE){
+            System.out.println("Invalid path!\n");
+            return;
+        }
+        System.out.println("Shortest distance between these two stops is: " + dist[stopB]);
+        StringBuilder sb = new StringBuilder();
+        System.out.println("Path taken between these stops:");
+        printPath(sb, stopB, parents);
+        System.out.println(sb.substring(0,sb.length() - 5));
+
+    }
+    private static void printPath(StringBuilder sb, int currentVertex, int[] parents)
+    {
+        if (currentVertex == child) return;
+        printPath(sb, parents[currentVertex], parents);
+        sb.append(currentVertex + " --> ");
+    }
+}
+

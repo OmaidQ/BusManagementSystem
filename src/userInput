@@ -1,0 +1,115 @@
+import java.io.FileNotFoundException;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.*;
+
+public class userInput {
+    public static ShortestPath e;
+
+    public static void main(String[] args) throws FileNotFoundException {
+        boolean running = true;
+        e = new ShortestPath("stop_times.txt", "transfers.txt");
+        while (running == true) {
+            running = screen();
+        }
+        System.out.println("Program has been terminated!");
+    }
+
+    public static boolean screen() {
+        System.out.println("\nWhat option would you like to select?");
+        System.out.println("Type 0 to exit the program!");
+        System.out.println("Type 1 to find the shortest paths between 2 bus stops!");
+        System.out.println("Type 2 to search information about a bus stop!");
+        System.out.println("Type 3 to search for all trips with a given arrival time!\n");
+        Scanner sc = new Scanner(System.in);
+
+        int input = 5;
+        try {
+            input = sc.nextInt();
+        } catch (Exception exception) {
+            System.out.println("Invalid input!\n");
+        }
+        if (input == 0) {
+            return false;
+        }
+        // Finding the shortest path between two bus stops
+        else if (input == 1) {
+            int stopA = 0;
+            int stopB = 0;
+            try {
+                System.out.println("Enter first stop: ");
+                if (sc.hasNextInt())
+                    stopA = sc.nextInt();
+                System.out.println("Enter second stop: ");
+                if (sc.hasNextInt())
+                    stopB = sc.nextInt();
+                e.findShortestPath(stopA, stopB);
+            } catch (InputMismatchException ex) {
+                System.out.println("Invalid input!\n");
+            } catch (Exception e) {
+                System.out.println("Invalid path!\n");
+            }
+        } // Find stop information
+        else if (input == 2) {
+            System.out.println("Enter stop name: ");
+            try {
+                String stopName = sc.next().toUpperCase();
+                TST tst = new TST("stops.txt");
+                Iterable<String> allStops = tst.keysWithPrefix(stopName);
+                int count = 0;
+                for (String key : allStops) {
+                    System.out.println("" + tst.get(key));
+                    count++;
+                }
+                if (count == 0)
+                    System.out.println("No matching stops were found\n");
+            } catch (Exception e) {
+                System.out.println("Error occured\n");
+            }
+        } // Find arrival times
+        else if (input == 3) {
+            System.out.println("Please enter desired time in HH:mm:ss format!");
+            SimpleDateFormat dateFormat = new SimpleDateFormat("HH:mm:ss");
+            try {
+                Date maximumTime = dateFormat.parse("24:00:00");
+                Date minTime = dateFormat.parse("00:00:00");
+                String time2 = sc.nextLine();
+                String time = sc.nextLine();
+                Date givenArrivalTime = dateFormat.parse(time);
+                if (givenArrivalTime.getTime() > minTime.getTime()
+                        && givenArrivalTime.getTime() < maximumTime.getTime()) {
+                    ArrivalTimes a = new ArrivalTimes();
+                    ArrayList<String> array = a.searchTrips(time, "stop_times.txt");
+                    if (array.size() > 1) {
+                        Scanner scLine = null;
+                        String line;
+                        for (int i = 0; i < array.size(); i++) {
+                            StringBuilder sb = new StringBuilder();
+                            line = array.get(i);
+                            scLine = new Scanner(line);
+                            scLine.useDelimiter(",");
+
+                            sb.append("  trip_id: " + scLine.next() + "\n");
+                            sb.append("  arrival_time: " + scLine.next() + "\n");
+                            sb.append("  departure_time: " + scLine.next() + "\n");
+                            sb.append("  stop_id: " + scLine.next() + "\n");
+                            sb.append("  stop_sequence: " + scLine.next() + "\n");
+                            sb.append("  stop_headsign: " + scLine.next() + "\n");
+                            sb.append("  pickup_type: " + scLine.next() + "\n");
+                            sb.append("  drop_off_type: " + scLine.next() + "\n");
+                            sb.append("  shape_dist_traveled: " + scLine.next() + "\n");
+
+                            System.out.println(sb.toString());
+                        }
+                    } else
+                        System.out.println("No trips found in desired time slot\n");
+                } else
+                    System.out.println("Input error, please try inputting time in correct time\n");
+            } catch (Exception e) {
+                System.out.println("Input error\n");
+            }
+        } else
+            System.out.println("Input not within required range!\n");
+        return true;
+    }
+}
